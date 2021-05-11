@@ -1,13 +1,23 @@
 #include "client.h"
 
 Client::Client() {
-    std::cout << "client constructor" << std::endl;
+    mqdes = mq_open("/uxp_server_queue", O_WRONLY);
+
+    if (mqdes == -1) {
+        throw std::runtime_error("Failed to open message queue.");
+    }
 }
 
 Client::~Client() {
-    std::cout << "client destructor" << std::endl;
+    if (mq_close(mqdes) == -1) {
+        //throw std::runtime_error("Failed to close message queue.");
+    }
 }
 
 void Client::Run() {
-    std::cout << "client run" << std::endl;
+    const char *msg = "test";
+
+    for (int i = 0; i < 5; ++i) {
+        mq_send(mqdes, msg, strlen(msg), 0);
+    }
 }
