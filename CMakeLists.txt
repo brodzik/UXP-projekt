@@ -20,4 +20,6 @@ file(GLOB COMMON_FILES
 )
 
 add_executable(server ${SERVER_FILES} ${COMMON_FILES})
+target_link_libraries(server rt)
 add_executable(client ${CLIENT_FILES} ${COMMON_FILES})
+target_link_libraries(client rt)
