@@ -7,8 +7,7 @@
 #include <optional>
 #include <cmath>
 
-using Value = std::variant<int, float, std::string>;
-
+#include "AuxiliaryParsingFunctions.h"
 
 class LindaParser {
 
@@ -20,14 +19,19 @@ class LindaParser {
     void generateError(std::string message);
     char getNextChar();
     void expectCharacter(char expectedChar);
+    bool checkNextCharacter(char expectedChar);
     std::optional<char> escapeCharacter(char previousCharacter, 
         char currentCharacter);
+    void checkTypeAndValue(Type type, Value value);
 
     std::optional<Value> buildNumber();
     std::optional<Value> buildString();
+    std::optional<Type> buildType();
+    Condition buildCondition();
 
 public:
     LindaParser(std::istream& inStream): inStream(inStream) {}
 
     std::vector<Value> buildTuple();
+    std::vector<PatternEntry> buildPattern();
 };

@@ -128,3 +128,14 @@ TEST(parsingTuples, differentTypes2) {
     // reverse
     GTEST_ASSERT_EQ(lindaTuple.toString(), R"(("text",2,3,0.990000))");
 }
+
+
+TEST(parsingTuples, floatThatIsAnInt) {
+    // forward
+    LindaTuple lindaTuple(R"( (1.) )");
+    assertValue(lindaTuple.values[0], 1.0f);
+    GTEST_ASSERT_EQ(lindaTuple.values.size(), 1);
+
+    // reverse
+    GTEST_ASSERT_EQ(lindaTuple.toString(), R"((1.000000))");
+}

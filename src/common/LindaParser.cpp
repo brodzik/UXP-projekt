@@ -18,6 +18,24 @@ char LindaParser::getNextChar() {
 }
 
 
+
+void LindaParser::expectCharacter(char expectedChar) {
+    if(currentChar != expectedChar)
+        generateError("Expected " + expectedChar + std::string(", but got") 
+            + currentChar);
+    getNextChar();
+}
+
+
+bool LindaParser::checkNextCharacter(char expectedChar) {
+    if(currentChar != expectedChar)
+        return false;
+    getNextChar();
+    return true;
+}
+
+
+
 // converts current char into an escaped character based on previous character
 // used in string parsing
 std::optional<char> LindaParser::escapeCharacter(char previousCharacter, 
@@ -34,12 +52,28 @@ std::optional<char> LindaParser::escapeCharacter(char previousCharacter,
 }
 
 
-void LindaParser::expectCharacter(char expectedChar) {
-    if(currentChar != expectedChar)
-        generateError("Expected " + expectedChar + std::string(", but got") 
-            + currentChar);
-    getNextChar();
+
+void LindaParser::checkTypeAndValue(Type type, Value value) {
+    if(type == Type::INT) {
+        if(!std::get_if<int>(&value))
+            generateError("Expected value to be of type INT");
+        return;
+    }
+
+    if(type == Type::FLOAT) {
+        if(!std::get_if<float>(&value))
+            generateError("Expected value to be of type FLOAT");
+        return;
+    }
+
+    if(type == Type::STRING) {
+        if(!std::get_if<std::string>(&value))
+            generateError("Expected value to be of type STRING");
+        return;
+    }
+
 }
+
 
 
     
@@ -143,6 +177,47 @@ std::optional<Value> LindaParser::buildString() {
 
 
 
+std::optional<Type> LindaParser::buildType() {
+    std::string identifierString;
+    if(!isalpha(currentChar))
+        return std::nullopt;
+
+    do {
+        identifierString += currentChar;
+        getNextChar();
+    } while(isalpha(currentChar));
+
+    if("int"         == identifierString)    return Type::INT;
+    if("float"       == identifierString)    return Type::FLOAT;
+    if("string"      == identifierString)    return Type::STRING;
+    
+    return std::nullopt;
+}
+
+
+
+Condition LindaParser::buildCondition() {
+    
+    if(checkNextCharacter('*'))
+        return Condition::ANY;
+    
+    if(checkNextCharacter('<')) {
+        if(checkNextCharacter('='))
+            return Condition::LESS_EQUAL;
+        return Condition::LESS_THAN;
+    }
+
+    if(checkNextCharacter('>')) {
+        if(checkNextCharacter('='))
+            return Condition::MORE_EQUAL;
+        return Condition::MORE_THAN;
+    }
+
+    return Condition::EQUAL;
+}
+
+
+
 
 std::vector<Value> LindaParser::buildTuple() {
     std::vector<Value> values;
@@ -159,14 +234,54 @@ std::vector<Value> LindaParser::buildTuple() {
             generateError("Expected number or string");
         
         values.push_back(value.value());
-        if(')' == currentChar) {
+        if(checkNextCharacter(')'))
             isProcessed = true;
-            getNextChar();
-        }
         else
             expectCharacter(',');
     }
     expectCharacter(-1); // EOT
  
     return values;
+}
+
+
+std::vector<PatternEntry> LindaParser::buildPattern() {
+    std::vector<PatternEntry> patternEntries;
+    bool isProcessed = false;
+
+    getNextChar();
+    expectCharacter('(');
+    while(!isProcessed) {
+        std::optional<Type> type = buildType();
+        if(!type)
+            generateError("Expected type");
+        
+        expectCharacter(':');
+
+        Condition condition = buildCondition();
+
+        std::optional<Value> value = std::nullopt;
+
+        if(FLOAT == type && EQUAL == condition)
+            generateError("Condition EQUAL for type FLOAT is illegal");
+
+        if(ANY != condition) {
+            value = buildNumber();
+            if(!value) 
+                value = buildString();
+            if(!value)
+                generateError("Expected number or string");
+            
+            checkTypeAndValue(type.value(), value.value());
+        }
+        
+        patternEntries.push_back(PatternEntry(type.value(), condition, value));
+        if(checkNextCharacter(')'))
+            isProcessed = true;
+        else
+            expectCharacter(',');
+    }
+    expectCharacter(-1); // EOT
+
+    return patternEntries;
 }
