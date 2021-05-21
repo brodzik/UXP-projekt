@@ -2,19 +2,29 @@
 
 #include <fcntl.h>
 #include <mqueue.h>
-#include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
+#include <cstring>
 #include <iostream>
-#include <stdexcept>
+#include <map>
 #include <string>
+
+#include "utility.h"
 
 class Server {
 private:
-    mqd_t mqdes;
+    std::string mq_name;
+    mqd_t server_mqdes;
+    std::map<int, int> clients;
 
 public:
     Server();
     ~Server();
-    void Run();
+    void Start();
+    void Receive();
+    void Send(int pid, std::string data);
+
+private:
+    void InitServerMessageQueue();
 };

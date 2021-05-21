@@ -1,6 +1,6 @@
 #include "server.h"
 
 int main() {
-    Server().Run();
+    Server().Start();
     return 0;
 }

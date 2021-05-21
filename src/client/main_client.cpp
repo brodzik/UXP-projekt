@@ -1,6 +1,6 @@
 #include "client.h"
 
 int main() {
-    Client().Run();
+    Client(getpid()).Start();
     return 0;
 }

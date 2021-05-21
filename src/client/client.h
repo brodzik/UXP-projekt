@@ -2,18 +2,34 @@
 
 #include <fcntl.h>
 #include <mqueue.h>
-#include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
+#include <cstring>
 #include <iostream>
-#include <stdexcept>
+#include <string>
+
+#include "utility.h"
 
 class Client {
 private:
-    mqd_t mqdes;
+    IntBytes pid;
+    IntBytes id;
+
+    std::string mq_name;
+
+    mqd_t server_mqdes;
+    mqd_t client_mqdes;
 
 public:
-    Client();
+    Client(int pid);
     ~Client();
-    void Run();
+
+    void Start();
+    void Send(std::string data);
+    void Receive();
+
+private:
+    void InitServerMessageQueue();
+    void InitClientMessageQueue();
 };
