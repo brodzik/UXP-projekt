@@ -2,12 +2,12 @@
 
 TEST(parsingPatterns, basicInt) {
     // forward
-    LindaPattern lindaPattern(R"( (int: 1) )");
-    assertPatternEntry(lindaPattern.entries[0], Type::INT, Condition::EQUAL, 1);
+    LindaPattern lindaPattern(R"( (int: 0) )");
+    assertPatternEntry(lindaPattern.entries[0], Type::INT, Condition::EQUAL, 0);
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 1);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((int:0))");
 }
 
 TEST(parsingPatterns, basicFloat) {
@@ -18,7 +18,7 @@ TEST(parsingPatterns, basicFloat) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 1);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((float:>1.000000))");
 }
 
 TEST(parsingPatterns, basicString) {
@@ -29,7 +29,7 @@ TEST(parsingPatterns, basicString) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 1);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((string:"abc"))");
 }
 
 TEST(parsingPatterns, multipleInts) {
@@ -41,7 +41,7 @@ TEST(parsingPatterns, multipleInts) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 3);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((int:1,int:2,int:3))");
 }
 
 TEST(parsingPatterns, multipleFloats) {
@@ -56,7 +56,8 @@ TEST(parsingPatterns, multipleFloats) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 3);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), 
+        R"((float:>1.000000,float:>2.000000,float:>3.000000))");
 }
 
 TEST(parsingPatterns, multipleStrings) {
@@ -71,7 +72,8 @@ TEST(parsingPatterns, multipleStrings) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 3);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), 
+        R"((string:"a",string:"b",string:"c"))");
 }
 
 TEST(parsingPatterns, conditionAny) {
@@ -82,7 +84,7 @@ TEST(parsingPatterns, conditionAny) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 1);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((int:*))");
 }
 
 TEST(parsingPatterns, conditionMoreThan) {
@@ -93,7 +95,7 @@ TEST(parsingPatterns, conditionMoreThan) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 1);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((int:>1))");
 }
 
 TEST(parsingPatterns, conditionMoreEqual) {
@@ -104,7 +106,7 @@ TEST(parsingPatterns, conditionMoreEqual) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 1);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((int:>=1))");
 }
 
 TEST(parsingPatterns, conditionLessThan) {
@@ -115,7 +117,7 @@ TEST(parsingPatterns, conditionLessThan) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 1);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((int:<1))");
 }
 
 TEST(parsingPatterns, conditionLessEqual) {
@@ -126,7 +128,7 @@ TEST(parsingPatterns, conditionLessEqual) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 1);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((int:<=1))");
 }
 
 TEST(parsingPatterns, weirdSpacing) {
@@ -139,7 +141,7 @@ TEST(parsingPatterns, weirdSpacing) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 3);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), R"((int:1,int:2,int:3))");
 }
 
 TEST(parsingPatterns, differentTypes1) {
@@ -153,7 +155,8 @@ TEST(parsingPatterns, differentTypes1) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 3);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), 
+        R"((int:1,float:>2.000000,string:"abc"))");
 }
 
 TEST(parsingPatterns, differentTypes2) {
@@ -169,7 +172,8 @@ TEST(parsingPatterns, differentTypes2) {
     GTEST_ASSERT_EQ(lindaPattern.entries.size(), 4);
 
     // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+    GTEST_ASSERT_EQ(lindaPattern.toString(), 
+        R"((string:"text",int:2,int:3,float:<=0.990000))");
 }
 
 TEST(parsingPatterns, floatEqualsFail) {
@@ -181,9 +185,6 @@ TEST(parsingPatterns, floatEqualsFail) {
         GTEST_ASSERT_EQ(exception, 
             "Position: 9 -> Condition EQUAL for type FLOAT is illegal");
     }
-
-    // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
 }
 
 TEST(parsingPatterns, typeMismatchFail) {
@@ -195,7 +196,37 @@ TEST(parsingPatterns, typeMismatchFail) {
         GTEST_ASSERT_EQ(exception, 
             "Position: 11 -> Expected value to be of type INT");
     }
+}
 
-    // reverse
-    // GTEST_ASSERT_EQ(lindaPatter.toString(), R"((int:1))");
+TEST(parsingPatterns, incorrectTypeFail) {
+    // forward
+    try {
+        LindaPattern lindaPattern(R"( (double: 1.23) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 8 -> Expected type");
+    }
+}
+
+TEST(parsingPatterns, missingColonFail) {
+    // forward
+    try {
+        LindaPattern lindaPattern(R"( (int; 1) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 5 -> Expected \":\", but got \";\"");
+    }
+}
+
+TEST(parsingPatterns, incorrectConditionSpacingFail) {
+    // forward
+    try {
+        LindaPattern lindaPattern(R"( (int: > = 1) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 9 -> Expected number or string");
+    }
 }

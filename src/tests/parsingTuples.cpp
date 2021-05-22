@@ -33,6 +33,17 @@ TEST(parsingTuples, basicString) {
 }
 
 
+TEST(parsingTuples, stringWithSpaces) {
+    // forward
+    LindaTuple lindaTuple(R"( ("abc def") )");
+    assertValue(lindaTuple.values[0], R"(abc def)");
+    GTEST_ASSERT_EQ(lindaTuple.values.size(), 1);
+
+    // reverse
+    GTEST_ASSERT_EQ(lindaTuple.toString(), R"(("abc def"))");
+}
+
+
 TEST(parsingTuples, stringEscaping1) {
     // forward
     LindaTuple lindaTuple(R"( ("\"") )");
@@ -138,4 +149,92 @@ TEST(parsingTuples, floatThatIsAnInt) {
 
     // reverse
     GTEST_ASSERT_EQ(lindaTuple.toString(), R"((1.000000))");
+}
+
+TEST(parsingTuples, leadingZerosFail) {
+    // forward
+    try {
+        LindaTuple lindaTuple(R"( (01) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 3 -> Leading zeros not allowed");
+    }
+}
+
+TEST(parsingTuples, numberTooBigFail) {
+    // forward
+    try {
+        LindaTuple lindaTuple(R"( (99999999999999) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 11 -> Number too big");
+    }
+}
+
+TEST(parsingTuples, UnexpectedEndOfTextFail) {
+    // forward
+    try {
+        LindaTuple lindaTuple(R"( ("abc) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 8 -> Unexpected end of text");
+    }
+}
+
+TEST(parsingTuples, incorrectStartingCharacterFail) {
+    // forward
+    try {
+        LindaTuple lindaTuple(R"( 1) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 1 -> Expected \"(\", but got \"1\"");
+    }
+}
+
+TEST(parsingTuples, noNumberOrTextFail) {
+    // forward
+    try {
+        LindaTuple lindaTuple(R"( (abc) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 2 -> Expected number or string");
+    }
+}
+
+TEST(parsingTuples, missingCommaFail) {
+    // forward
+    try {
+        LindaTuple lindaTuple(R"( (1 2) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 4 -> Expected \",\", but got \"2\"");
+    }
+}
+
+TEST(parsingTuples, trailingCommaFail) {
+    // forward
+    try {
+        LindaTuple lindaTuple(R"( (1,) )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 4 -> Expected number or string");
+    }
+}
+
+TEST(parsingTuples, trailingCharacterFail) {
+    // forward
+    try {
+        LindaTuple lindaTuple(R"( (1)a )");
+    }
+    catch(std::string exception) {
+        GTEST_ASSERT_EQ(exception, 
+            "Position: 4 -> Expected \"\xFF\", but got \"a\"");
+    }
 }

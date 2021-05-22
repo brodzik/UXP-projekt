@@ -18,6 +18,7 @@ class LindaParser {
 
     void generateError(std::string message);
     char getNextChar();
+    void skipWhites();
     void expectCharacter(char expectedChar);
     bool checkNextCharacter(char expectedChar);
     std::optional<char> escapeCharacter(char previousCharacter, 

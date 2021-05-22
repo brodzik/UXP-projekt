@@ -9,21 +9,25 @@ void LindaParser::generateError(std::string message) {
 
 
 char LindaParser::getNextChar() {
-    do {
-        currentChar = inStream.get();
-        ++position;
-    } while(isspace(currentChar));
-
+    currentChar = inStream.get();
+    ++position;
     return currentChar;
 }
 
+void LindaParser::skipWhites() {
+    while(isspace(currentChar))
+        getNextChar();
+}
 
 
 void LindaParser::expectCharacter(char expectedChar) {
+    skipWhites();
     if(currentChar != expectedChar)
-        generateError("Expected " + expectedChar + std::string(", but got") 
-            + currentChar);
+        generateError(std::string("Expected \"") + expectedChar + 
+            std::string("\"") + std::string(", but got \"") + currentChar + 
+            std::string("\""));
     getNextChar();
+    skipWhites();
 }
 
 
@@ -234,6 +238,8 @@ std::vector<Value> LindaParser::buildTuple() {
             generateError("Expected number or string");
         
         values.push_back(value.value());
+
+        skipWhites();
         if(checkNextCharacter(')'))
             isProcessed = true;
         else
@@ -259,6 +265,8 @@ std::vector<PatternEntry> LindaParser::buildPattern() {
         expectCharacter(':');
 
         Condition condition = buildCondition();
+        skipWhites();
+
 
         std::optional<Value> value = std::nullopt;
 
@@ -276,6 +284,7 @@ std::vector<PatternEntry> LindaParser::buildPattern() {
         }
         
         patternEntries.push_back(PatternEntry(type.value(), condition, value));
+        skipWhites();
         if(checkNextCharacter(')'))
             isProcessed = true;
         else
