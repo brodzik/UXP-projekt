@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 
+#include "common/LindaTuple.h"
 #include "utility.h"
 
 class Client {
@@ -26,7 +27,7 @@ public:
     ~Client();
 
     void Start();
-    void Send(std::string data);
+    void Send(std::string raw);
     void Receive();
 
 private:

@@ -41,20 +41,37 @@ void Client::InitClientMessageQueue() {
 
 void Client::Start() {
     while (true) {
-        Send("output(1, \"abc\", 3.1415, \"d\")");
+        Send("output((1, \"abc\", 3.1415, \"d\"))");
+        Receive();
+        sleep(1);
+        Send("input((1, \"abc\", 3.1415, \"d\"), 5)");
+        Receive();
+        sleep(1);
+        Send("read((1, \"abc\", 3.1415, \"d\"), 10)");
         Receive();
         sleep(1);
     }
 }
 
-void Client::Send(std::string data) {
-    size_t size = sizeof(pid) + sizeof(id) + data.size();
+void Client::Send(std::string raw) {
+    std::optional<LindaCommand> cmd;
+
+    try {
+        cmd = GetLindaCommand(raw);
+        LindaTuple(cmd->data);
+    } catch (...) {
+        std::cerr << "Error: invalid Linda command." << std::endl;
+        return;
+    }
+
+    size_t size = sizeof(pid) + sizeof(id) + 1 + cmd->data.size();
     char *msg = (char *)malloc(size);
     memset(msg, 0, size);
 
     memcpy(msg, pid.bytes, 4);
     memcpy(msg + 4, id.bytes, 4);
-    memcpy(msg + 8, data.c_str(), data.size());
+    msg[8] = cmd->op;
+    memcpy(msg + 9, cmd->data.c_str(), cmd->data.size());
 
     if (mq_send(server_mqdes, msg, size, 0) == -1) {
         std::cerr << "Error: failed to send message." << std::endl;

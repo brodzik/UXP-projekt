@@ -50,6 +50,8 @@ void Server::Receive() {
     memcpy(pid.bytes, buffer, 4);
     memcpy(id.bytes, buffer + 4, 4);
 
+    LindaOperation op = (LindaOperation)buffer[8];
+
     if (clients.find(pid.integer) == clients.end()) {
         std::string path = "/uxp_client_queue_" + std::to_string(pid.integer);
         int mqdes = mq_open(path.c_str(), O_WRONLY);
@@ -61,7 +63,7 @@ void Server::Receive() {
         }
     }
 
-    std::cout << "Got: " << pid.integer << " " << id.integer << " " << std::string(buffer + 8) << std::endl;
+    std::cout << "Got: " << pid.integer << " " << id.integer << " " << op << " " << std::string(buffer + 9) << std::endl;
 
     Send(pid.integer, "OK");
 }
