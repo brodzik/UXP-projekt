@@ -21,6 +21,7 @@ file(GLOB CLIENT_FILES
 
 file(GLOB COMMON_FILES
     src/utility.cpp
+    src/common/*.cpp
 )
 
 file(GLOB TEST_FILES
