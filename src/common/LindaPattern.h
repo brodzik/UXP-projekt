@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "LindaParser.h"
+#include "LindaTuple.h"
 
 class LindaPattern {
 
