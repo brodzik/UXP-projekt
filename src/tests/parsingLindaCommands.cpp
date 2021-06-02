@@ -9,15 +9,15 @@ TEST(parsingLindaCommands, output) {
 }
 
 TEST(parsingLindaCommands, input) {
-    auto x = GetLindaCommand("input((1, \"abc\", 3.1415, \"d\"), 10)");
+    auto x = GetLindaCommand("input((int: 1), 10)");
     GTEST_ASSERT_EQ(x->op, INPUT);
-    GTEST_ASSERT_EQ(x->data, "(1, \"abc\", 3.1415, \"d\")");
+    GTEST_ASSERT_EQ(x->data, "(int: 1)");
     GTEST_ASSERT_EQ(x->timeout, 10);
 }
 
 TEST(parsingLindaCommands, read) {
-    auto x = GetLindaCommand("read((1, \"abc\", 3.1415, \"d\"), 10)");
+    auto x = GetLindaCommand("read((int: 1), 10)");
     GTEST_ASSERT_EQ(x->op, READ);
-    GTEST_ASSERT_EQ(x->data, "(1, \"abc\", 3.1415, \"d\")");
+    GTEST_ASSERT_EQ(x->data, "(int: 1)");
     GTEST_ASSERT_EQ(x->timeout, 10);
 }

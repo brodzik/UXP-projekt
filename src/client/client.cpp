@@ -41,15 +41,17 @@ void Client::InitClientMessageQueue() {
 
 void Client::Start() {
     while (true) {
-        Send("output((1, \"abc\", 3.1415, \"d\"))");
+        Send("output((1))");
+        sleep(1);
+       
+        Send("read((int: 1), 10)");
         Receive();
         sleep(1);
-        Send("input((1, \"abc\", 3.1415, \"d\"), 5)");
+
+     /*   Send("input((int: 1, string: \"abc\", float: 3.1415, string: \"d\"), 10)");
         Receive();
         sleep(1);
-        Send("read((1, \"abc\", 3.1415, \"d\"), 10)");
-        Receive();
-        sleep(1);
+        */
     }
 }
 
@@ -58,7 +60,12 @@ void Client::Send(std::string raw) {
 
     try {
         cmd = GetLindaCommand(raw);
-        LindaTuple(cmd->data);
+        if (cmd.value().op == LindaOperation::OUTPUT) {
+          LindaTuple(cmd->data);
+        }
+        else {
+          LindaPattern(cmd->data);
+        }
     } catch (...) {
         std::cerr << "Error: invalid Linda command." << std::endl;
         return;

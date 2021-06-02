@@ -7,16 +7,33 @@
 
 #include <cstring>
 #include <iostream>
+#include <list>
 #include <map>
+#include <optional>
 #include <string>
 
+#include "common/LindaPattern.h"
+#include "common/LindaTuple.h"
 #include "utility.h"
+
+struct PatternWrapper {
+    PatternWrapper(LindaPattern pattern, int pid, bool ifDelete)
+        : pattern(pattern)
+        , pid(pid)
+        , ifDelete(ifDelete) {
+    }
+    LindaPattern pattern;
+    int pid;
+    bool ifDelete;
+};
 
 class Server {
 private:
     std::string mq_name;
     mqd_t server_mqdes;
     std::map<int, int> clients;
+    std::list<LindaTuple> tuples;
+    std::list<PatternWrapper> patterns;
 
 public:
     Server();
@@ -27,4 +44,8 @@ public:
 
 private:
     void InitServerMessageQueue();
+    void MakeResponse(int pid, LindaOperation, std::string);
+    void HandleRead(int pid, std::string &);
+    void HandleOutput(std::string &);
+    void HandleInput(int pid, std::string &);
 };

@@ -10,6 +10,7 @@
 #include <string>
 
 #include "common/LindaTuple.h"
+#include "common/LindaPattern.h"
 #include "utility.h"
 
 class Client {

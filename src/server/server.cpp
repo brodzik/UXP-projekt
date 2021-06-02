@@ -1,5 +1,7 @@
 #include "server.h"
 
+#include <algorithm>
+
 Server::Server() {
     mq_name = "/uxp_server_queue";
 
@@ -63,9 +65,77 @@ void Server::Receive() {
         }
     }
 
-    std::cout << "Got: " << pid.integer << " " << id.integer << " " << op << " " << std::string(buffer + 9) << std::endl;
+    std::string data(buffer + 9);
 
-    Send(pid.integer, "OK");
+    std::cout << "Got: " << pid.integer << " " << id.integer << " " << op << " " << data << std::endl;
+
+    MakeResponse(pid.integer, op, data);
+    //    Send(pid.integer, "OK");
+}
+
+void Server::HandleOutput(std::string &data) {
+    LindaTuple tuple(data);
+
+    auto it = find_if(patterns.begin(), patterns.end(), [&tuple](auto &patternWrapper) {
+        return patternWrapper.pattern.isMatching(tuple);
+    });
+
+    if (it == patterns.end() || !(it->ifDelete)) {
+        tuples.push_back(tuple);
+    }
+
+    if (it != patterns.end()) {
+        Send(it->pid, tuple.toString());
+        patterns.erase(it);
+    }
+}
+
+void Server::HandleInput(int pid, std::string &data) {
+    std::cout << data << std::endl;
+    LindaPattern pattern(data);
+
+    auto it = find_if(tuples.begin(), tuples.end(), [&pattern](auto &tuple) {
+        return pattern.isMatching(tuple);
+    });
+
+    if (it != tuples.end()) {
+        Send(pid, it->toString());
+        tuples.erase(it);
+    } else {
+        PatternWrapper patternWrapper(pattern, pid, true);
+        patterns.push_back(patternWrapper);
+    }
+}
+
+void Server::HandleRead(int pid, std::string &data) {
+    LindaPattern pattern(data);
+
+    auto it = find_if(tuples.begin(), tuples.end(), [&pattern](auto &tuple) {
+        return pattern.isMatching(tuple);
+    });
+
+    if (it != tuples.end()) {
+        Send(pid, it->toString());
+    } else {
+        PatternWrapper patternWrapper(pattern, pid, false);
+        patterns.push_back(patternWrapper);
+    }
+}
+
+void Server::MakeResponse(int pid, LindaOperation op, std::string data) {
+    switch (op) {
+        case LindaOperation::OUTPUT:
+            HandleOutput(data);
+            break;
+
+        case LindaOperation::READ:
+            HandleRead(pid, data);
+            break;
+
+        case LindaOperation::INPUT:
+            HandleInput(pid, data);
+            break;
+    }
 }
 
 void Server::Send(int pid, std::string data) {
