@@ -94,7 +94,6 @@ void Server::HandleOutput(std::string &data) {
 }
 
 void Server::HandleInput(int pid, std::string &data) {
-    std::cout << data << std::endl;
     LindaPattern pattern(data);
 
     auto it = find_if(tuples.begin(), tuples.end(), [&pattern](auto &tuple) {
