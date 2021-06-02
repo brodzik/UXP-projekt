@@ -66,11 +66,14 @@ void Server::Receive() {
     }
 
     std::string data(buffer + 9);
-
     std::cout << "Got: " << pid.integer << " " << id.integer << " " << op << " " << data << std::endl;
 
-    MakeResponse(pid.integer, op, data);
-    //    Send(pid.integer, "OK");
+    try {
+        MakeResponse(pid.integer, op, data);
+    } catch (...) {
+        std::cerr << "error" << std::endl;
+        // Send(pid.integer, "Error")
+    }
 }
 
 void Server::HandleOutput(std::string &data) {

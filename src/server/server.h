@@ -16,19 +16,19 @@
 #include "common/LindaTuple.h"
 #include "utility.h"
 
-struct PatternWrapper {
-    PatternWrapper(LindaPattern pattern, int pid, bool ifDelete)
-        : pattern(pattern)
-        , pid(pid)
-        , ifDelete(ifDelete) {
-    }
-    LindaPattern pattern;
-    int pid;
-    bool ifDelete;
-};
-
 class Server {
 private:
+    struct PatternWrapper {
+        PatternWrapper(LindaPattern pattern, int pid, bool ifDelete)
+            : pattern(pattern)
+            , pid(pid)
+            , ifDelete(ifDelete) {
+        }
+        LindaPattern pattern;
+        int pid;
+        bool ifDelete;
+    };
+
     std::string mq_name;
     mqd_t server_mqdes;
     std::map<int, int> clients;
