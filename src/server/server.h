@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <ctime>
 #include <iostream>
 #include <list>
 #include <map>
@@ -19,15 +20,17 @@
 class Server {
 private:
     struct PatternWrapper {
-        PatternWrapper(LindaPattern pattern, int pid, int id, bool ifDelete)
+        PatternWrapper(LindaPattern pattern, int pid, int id, timespec tm, bool ifDelete)
             : pattern(pattern)
             , pid(pid)
             , id(id)
+            , tm(tm)
             , ifDelete(ifDelete) {
         }
         LindaPattern pattern;
         int pid;
         int id;
+        timespec tm;
         bool ifDelete;
     };
 
@@ -46,8 +49,9 @@ public:
 
 private:
     void InitServerMessageQueue();
-    void MakeResponse(int pid, int id, LindaOperation, std::string);
-    void HandleRead(int pid, int id, std::string &);
+    void MakeResponse(int pid, int id, LindaOperation, timespec tm, std::string);
+    void HandleRead(int pid, int id, timespec tm, std::string &);
     void HandleOutput(std::string &);
-    void HandleInput(int pid, int id, std::string &);
+    void HandleInput(int pid, int id, timespec tm, std::string &);
+    bool HasTimedout(timespec tm);
 };

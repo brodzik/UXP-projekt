@@ -49,10 +49,13 @@ void Server::Receive() {
     IntBytes pid = {};
     IntBytes id = {};
 
-    memcpy(pid.bytes, buffer, 4);
-    memcpy(id.bytes, buffer + 4, 4);
+    memcpy(pid.bytes, buffer, sizeof(pid));
+    memcpy(id.bytes, buffer + sizeof(pid), sizeof(id));
 
-    LindaOperation op = (LindaOperation)buffer[8];
+    LindaOperation op = (LindaOperation)buffer[sizeof(pid) + sizeof(id)];
+
+    struct timespec tm;
+    memcpy(&tm, buffer + sizeof(pid) + sizeof(id) + sizeof(char), sizeof(tm));
 
     if (clients.find(pid.integer) == clients.end()) {
         std::string path = "/uxp_client_queue_" + std::to_string(pid.integer);
@@ -65,11 +68,11 @@ void Server::Receive() {
         }
     }
 
-    std::string data(buffer + 9);
+    std::string data(buffer + sizeof(pid) + sizeof(id) + sizeof(char) + sizeof(tm));
     std::cout << "Got: " << pid.integer << " " << id.integer << " " << op << " " << data << std::endl;
 
     try {
-        MakeResponse(pid.integer, id.integer, op, data);
+        MakeResponse(pid.integer, id.integer, op, tm, data);
     } catch (...) {
         std::cerr << "error" << std::endl;
     }
@@ -87,12 +90,18 @@ void Server::HandleOutput(std::string &data) {
     }
 
     if (it != patterns.end()) {
-        Send(it->pid, it->id, tuple.toString());
+        if (HasTimedout(it->tm)) {
+            std::cout << "Request " << it->pid << " " << it->id << " has already timed out. Tuple won't be sent." << std::endl;
+            tuples.push_back(tuple);
+        } else {
+            Send(it->pid, it->id, tuple.toString());
+        }
+
         patterns.erase(it);
     }
 }
 
-void Server::HandleInput(int pid, int id, std::string &data) {
+void Server::HandleInput(int pid, int id, timespec tm, std::string &data) {
     LindaPattern pattern(data);
 
     auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
@@ -103,12 +112,12 @@ void Server::HandleInput(int pid, int id, std::string &data) {
         Send(pid, id, it->toString());
         tuples.erase(it);
     } else {
-        PatternWrapper patternWrapper(pattern, pid, id, true);
+        PatternWrapper patternWrapper(pattern, pid, id, tm, true);
         patterns.push_back(patternWrapper);
     }
 }
 
-void Server::HandleRead(int pid, int id, std::string &data) {
+void Server::HandleRead(int pid, int id, timespec tm, std::string &data) {
     LindaPattern pattern(data);
 
     auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
@@ -118,23 +127,23 @@ void Server::HandleRead(int pid, int id, std::string &data) {
     if (it != tuples.end()) {
         Send(pid, id, it->toString());
     } else {
-        PatternWrapper patternWrapper(pattern, pid, id, false);
+        PatternWrapper patternWrapper(pattern, pid, id, tm, false);
         patterns.push_back(patternWrapper);
     }
 }
 
-void Server::MakeResponse(int pid, int id, LindaOperation op, std::string data) {
+void Server::MakeResponse(int pid, int id, LindaOperation op, timespec tm, std::string data) {
     switch (op) {
         case LindaOperation::OUTPUT:
             HandleOutput(data);
             break;
 
         case LindaOperation::READ:
-            HandleRead(pid, id, data);
+            HandleRead(pid, id, tm, data);
             break;
 
         case LindaOperation::INPUT:
-            HandleInput(pid, id, data);
+            HandleInput(pid, id, tm, data);
             break;
     }
 }
@@ -156,4 +165,14 @@ void Server::Send(int pid, int id, std::string data) {
     }
 
     delete msg;
+}
+
+bool Server::HasTimedout(timespec tm) {
+    if (tm.tv_sec == 0 && tm.tv_nsec == 0) {
+        return false;
+    }
+
+    timespec curr;
+    clock_gettime(CLOCK_REALTIME, &curr);
+    return tm < curr;
 }

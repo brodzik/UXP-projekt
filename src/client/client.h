@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <ctime>
 #include <iostream>
 #include <string>
 
@@ -28,8 +29,8 @@ public:
     ~Client();
 
     void Start(bool interactive);
-    void Send(std::string raw, LindaOperation *op);
-    void Receive();
+    void Send(std::string raw);
+    void Receive(int timeout, timespec tm);
 
 private:
     void InitServerMessageQueue();
