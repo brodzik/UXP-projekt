@@ -40,25 +40,12 @@ void Client::InitClientMessageQueue() {
     }
 }
 
-void Client::Start(bool interactive) {
-    while (true) {
-        if (interactive) {
-            std::string s;
-            std::getline(std::cin, s);
+void Client::Start() {
+    std::string s;
 
-            if (s == "exit") {
-                return;
-            }
-
-            Send(s);
-        } else {
-            Send("output((1, \"abc\", 3.1415, \"d\"))");
-            sleep(1);
-            Send("read((int: 1, string: *, float: *, string: *), 10)");
-            sleep(1);
-            Send("input((int: 1, string: *, float: *, string: *), 10)");
-            sleep(1);
-        }
+    while (s != "exit") {
+        std::getline(std::cin, s);
+        Send(s);
     }
 }
 
@@ -67,9 +54,9 @@ void Client::Send(std::string raw) {
 
     try {
         cmd = GetLindaCommand(raw);
-        if (cmd.value().op == LindaOperation::OUTPUT) {
+        if (cmd->op == LindaOperation::OUTPUT) {
             LindaTuple(cmd->data);
-        } else {
+        } else if (cmd->op != LindaOperation::EXIT) {
             LindaPattern(cmd->data);
         }
     } catch (...) {
@@ -103,11 +90,11 @@ void Client::Send(std::string raw) {
         std::cout << "Sent." << std::endl;
     }
 
-    ++id.integer;
+    id.integer = (id.integer + 1) % (INT_MAX - 1);
 
     delete msg;
 
-    if (cmd->op != LindaOperation::OUTPUT) {
+    if (cmd->op != LindaOperation::OUTPUT && cmd->op != LindaOperation::EXIT) {
         Receive(cmd->timeout, tm);
     }
 }

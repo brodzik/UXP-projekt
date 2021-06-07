@@ -11,7 +11,8 @@ union IntBytes {
 enum LindaOperation {
     OUTPUT,
     INPUT,
-    READ
+    READ,
+    EXIT
 };
 
 struct LindaCommand {

@@ -39,4 +39,6 @@ private:
     void HandleRead(PatternWrapper&);
     void HandleOutput(std::string &);
     void HandleInput(PatternWrapper&);
+    void HandleExit(int pid);
+    bool HasTimedout(timespec tm);
 };

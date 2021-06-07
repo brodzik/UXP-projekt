@@ -86,7 +86,7 @@ void Server::HandleOutput(std::string &data) {
     });
 
     while (it != patterns.end()) {
-        if (it == patterns.end() || !(it->ifDelete)) {
+        if (!(it->ifDelete)) {
             tuples.push_back(tuple);
             return;
         }
@@ -114,8 +114,6 @@ void Server::HandleOutput(std::string &data) {
 }
 
 void Server::HandleInput(PatternWrapper& patternWrapper) {
-    //LindaPattern pattern(data);
-
     auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
         return patternWrapper.pattern.isMatching(tuple);
     });
@@ -129,8 +127,6 @@ void Server::HandleInput(PatternWrapper& patternWrapper) {
 }
 
 void Server::HandleRead(PatternWrapper& patternWrapper) {
-    //LindaPattern pattern(data);
-
     auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
         return patternWrapper.pattern.isMatching(tuple);
     });
@@ -139,6 +135,18 @@ void Server::HandleRead(PatternWrapper& patternWrapper) {
         Send(patternWrapper.pid, patternWrapper.id, it->toString());
     } else {
         patterns.push_back(patternWrapper);
+    }
+}
+
+void Server::HandleExit(int pid) {
+    auto it = clients.find(pid);
+
+    if (it != clients.end()) {
+        std::string path = "/uxp_client_queue_" + std::to_string(pid);
+        mq_close(it->second);
+        mq_unlink(path.c_str());
+        clients.erase(it);
+        std::cout << "Connection to " << pid << " has been closed." << std::endl;
     }
 }
 
@@ -164,6 +172,9 @@ void Server::MakeResponse(int pid, int id, LindaOperation op, timespec tm, std::
               break;
             }       
               
+        case LindaOperation::EXIT:
+            HandleExit(pid);
+            break;
     }
 }
 
