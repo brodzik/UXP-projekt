@@ -49,10 +49,13 @@ void Server::Receive() {
     IntBytes pid = {};
     IntBytes id = {};
 
-    memcpy(pid.bytes, buffer, 4);
-    memcpy(id.bytes, buffer + 4, 4);
+    memcpy(pid.bytes, buffer, sizeof(pid));
+    memcpy(id.bytes, buffer + sizeof(pid), sizeof(id));
 
-    LindaOperation op = (LindaOperation)buffer[8];
+    LindaOperation op = (LindaOperation)buffer[sizeof(pid) + sizeof(id)];
+
+    struct timespec tm;
+    memcpy(&tm, buffer + sizeof(pid) + sizeof(id) + sizeof(char), sizeof(tm));
 
     if (clients.find(pid.integer) == clients.end()) {
         std::string path = "/uxp_client_queue_" + std::to_string(pid.integer);
@@ -65,21 +68,20 @@ void Server::Receive() {
         }
     }
 
-    std::string data(buffer + 9);
+    std::string data(buffer + sizeof(pid) + sizeof(id) + sizeof(char) + sizeof(tm));
     std::cout << "Got: " << pid.integer << " " << id.integer << " " << op << " " << data << std::endl;
 
     try {
-        MakeResponse(pid.integer, op, data);
+        MakeResponse(pid.integer, id.integer, op, tm, data);
     } catch (...) {
         std::cerr << "error" << std::endl;
-        // Send(pid.integer, "Error")
     }
 }
 
 void Server::HandleOutput(std::string &data) {
     LindaTuple tuple(data);
 
-    auto it = find_if(patterns.begin(), patterns.end(), [&tuple](auto &patternWrapper) {
+    auto it = std::find_if(patterns.begin(), patterns.end(), [&](auto &patternWrapper) {
         return patternWrapper.pattern.isMatching(tuple);
     });
 
@@ -88,60 +90,89 @@ void Server::HandleOutput(std::string &data) {
     }
 
     if (it != patterns.end()) {
-        Send(it->pid, tuple.toString());
+        if (HasTimedout(it->tm)) {
+            std::cout << "Request " << it->pid << " " << it->id << " has already timed out. Tuple won't be sent." << std::endl;
+            tuples.push_back(tuple);
+        } else {
+            Send(it->pid, it->id, tuple.toString());
+        }
+
         patterns.erase(it);
     }
 }
 
-void Server::HandleInput(int pid, std::string &data) {
+void Server::HandleInput(int pid, int id, timespec tm, std::string &data) {
     LindaPattern pattern(data);
 
-    auto it = find_if(tuples.begin(), tuples.end(), [&pattern](auto &tuple) {
+    auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
         return pattern.isMatching(tuple);
     });
 
     if (it != tuples.end()) {
-        Send(pid, it->toString());
+        Send(pid, id, it->toString());
         tuples.erase(it);
     } else {
-        PatternWrapper patternWrapper(pattern, pid, true);
+        PatternWrapper patternWrapper(pattern, pid, id, tm, true);
         patterns.push_back(patternWrapper);
     }
 }
 
-void Server::HandleRead(int pid, std::string &data) {
+void Server::HandleRead(int pid, int id, timespec tm, std::string &data) {
     LindaPattern pattern(data);
 
-    auto it = find_if(tuples.begin(), tuples.end(), [&pattern](auto &tuple) {
+    auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
         return pattern.isMatching(tuple);
     });
 
     if (it != tuples.end()) {
-        Send(pid, it->toString());
+        Send(pid, id, it->toString());
     } else {
-        PatternWrapper patternWrapper(pattern, pid, false);
+        PatternWrapper patternWrapper(pattern, pid, id, tm, false);
         patterns.push_back(patternWrapper);
     }
 }
 
-void Server::MakeResponse(int pid, LindaOperation op, std::string data) {
+void Server::MakeResponse(int pid, int id, LindaOperation op, timespec tm, std::string data) {
     switch (op) {
         case LindaOperation::OUTPUT:
             HandleOutput(data);
             break;
 
         case LindaOperation::READ:
-            HandleRead(pid, data);
+            HandleRead(pid, id, tm, data);
             break;
 
         case LindaOperation::INPUT:
-            HandleInput(pid, data);
+            HandleInput(pid, id, tm, data);
             break;
     }
 }
 
-void Server::Send(int pid, std::string data) {
-    if (mq_send(clients[pid], data.c_str(), data.size(), 0) == -1) {
+void Server::Send(int pid, int id, std::string data) {
+    IntBytes i = {.integer = id};
+
+    size_t size = sizeof(i) + data.size();
+    char *msg = (char *)malloc(size);
+    memset(msg, 0, size);
+
+    memcpy(msg, i.bytes, 4);
+    memcpy(msg + 4, data.c_str(), data.size());
+
+    if (mq_send(clients[pid], msg, size, 0) < 0) {
         std::cerr << "Error: failed to send message." << std::endl;
+    } else {
+        std::cout << "Response sent " << pid << " " << id << "." << std::endl;
     }
+
+    delete msg;
+}
+
+bool Server::HasTimedout(timespec tm) {
+    if (tm.tv_sec == 0 && tm.tv_nsec == 0) {
+        return false;
+    }
+
+    timespec curr;
+    clock_gettime(CLOCK_REALTIME, &curr);
+    return tm < curr;
 }

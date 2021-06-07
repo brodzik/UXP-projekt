@@ -31,27 +31,34 @@ void Client::InitClientMessageQueue() {
     attr.mq_msgsize = 4096;
 
     mq_unlink(mq_name.c_str());
+
     client_mqdes = mq_open(mq_name.c_str(), O_RDONLY | O_CREAT, S_IRWXU | S_IRWXG, &attr);
 
-    if (server_mqdes == -1) {
+    if (client_mqdes == -1) {
         std::cerr << "Error: failed to open client message queue." << std::endl;
         exit(-1);
     }
 }
 
-void Client::Start() {
+void Client::Start(bool interactive) {
     while (true) {
-        Send("output((1))");
-        sleep(1);
+        if (interactive) {
+            std::string s;
+            std::getline(std::cin, s);
 
-        Send("input((int: 1), 10)");
-        Receive();
-        sleep(1);
+            if (s == "exit") {
+                return;
+            }
 
-        /*   Send("input((int: 1, string: \"abc\", float: 3.1415, string: \"d\"), 10)");
-        Receive();
-        sleep(1);
-        */
+            Send(s);
+        } else {
+            Send("output((1, \"abc\", 3.1415, \"d\"))");
+            sleep(1);
+            Send("read((int: 1, string: *, float: *, string: *), 10)");
+            sleep(1);
+            Send("input((int: 1, string: *, float: *, string: *), 10)");
+            sleep(1);
+        }
     }
 }
 
@@ -70,34 +77,64 @@ void Client::Send(std::string raw) {
         return;
     }
 
-    size_t size = sizeof(pid) + sizeof(id) + 1 + cmd->data.size();
+    struct timespec tm;
+    size_t size = sizeof(pid) + sizeof(id) + sizeof(char) + sizeof(tm) + cmd->data.size();
     char *msg = (char *)malloc(size);
     memset(msg, 0, size);
 
-    memcpy(msg, pid.bytes, 4);
-    memcpy(msg + 4, id.bytes, 4);
-    msg[8] = cmd->op;
-    memcpy(msg + 9, cmd->data.c_str(), cmd->data.size());
+    memcpy(msg, pid.bytes, sizeof(pid));
+    memcpy(msg + sizeof(pid), id.bytes, sizeof(id));
+    msg[sizeof(pid) + sizeof(id)] = cmd->op;
 
-    if (mq_send(server_mqdes, msg, size, 0) == -1) {
+    if (cmd->timeout > 0) {
+        clock_gettime(CLOCK_REALTIME, &tm);
+        tm.tv_sec += cmd->timeout;
+    } else {
+        memset(&tm, 0, sizeof(tm));
+    }
+
+    memcpy(msg + sizeof(pid) + sizeof(id) + sizeof(char), &tm, sizeof(tm));
+
+    memcpy(msg + sizeof(pid) + sizeof(id) + sizeof(char) + sizeof(tm), cmd->data.c_str(), cmd->data.size());
+
+    if (mq_send(server_mqdes, msg, size, 0) < 0) {
         std::cerr << "Error: failed to send message." << std::endl;
+    } else {
+        std::cout << "Sent." << std::endl;
     }
 
     ++id.integer;
 
     delete msg;
+
+    if (cmd->op != LindaOperation::OUTPUT) {
+        Receive(cmd->timeout, tm);
+    }
 }
 
-void Client::Receive() {
+void Client::Receive(int timeout, timespec tm) {
     char buffer[4096];
     memset(buffer, 0, sizeof(buffer));
 
-    ssize_t res = mq_receive(client_mqdes, buffer, sizeof(buffer), NULL);
+    ssize_t res;
 
-    if (res == -1) {
+    if (timeout <= 0) {
+        res = mq_receive(client_mqdes, buffer, sizeof(buffer), NULL);
+    } else {
+        res = mq_timedreceive(client_mqdes, buffer, sizeof(buffer), NULL, &tm);
+    }
+
+    if (errno == ETIMEDOUT) {
+        std::cout << "Timeout" << std::endl;
+        return;
+    } else if (res < 0) {
         std::cerr << "Failed to receive message." << std::endl;
         return;
     }
 
-    std::cout << "Got: " << std::string(buffer) << std::endl;
+    IntBytes i;
+    memcpy(i.bytes, buffer, 4);
+    std::string data = std::string(buffer + 4);
+
+    std::cout << "Got: " << i.integer << " " << data << std::endl;
 }

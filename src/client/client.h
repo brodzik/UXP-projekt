@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <ctime>
 #include <iostream>
 #include <string>
 
@@ -27,9 +28,9 @@ public:
     Client(int pid);
     ~Client();
 
-    void Start();
+    void Start(bool interactive);
     void Send(std::string raw);
-    void Receive();
+    void Receive(int timeout, timespec tm);
 
 private:
     void InitServerMessageQueue();

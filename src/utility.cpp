@@ -37,3 +37,11 @@ std::optional<LindaCommand> GetLindaCommand(std::string raw) {
 
     return cmd;
 }
+
+bool operator<(timespec &lhs, timespec &rhs) {
+    if (lhs.tv_sec == rhs.tv_sec) {
+        return lhs.tv_nsec < rhs.tv_nsec;
+    } else {
+        return lhs.tv_sec < rhs.tv_sec;
+    }
+}

@@ -1,8 +1,8 @@
 #pragma once
 
+#include <ctime>
 #include <optional>
 #include <string>
-
 union IntBytes {
     int integer;
     char bytes[4];
@@ -21,3 +21,5 @@ struct LindaCommand {
 };
 
 std::optional<LindaCommand> GetLindaCommand(std::string raw);
+
+bool operator<(timespec &lhs, timespec &rhs);
