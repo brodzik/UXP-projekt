@@ -36,8 +36,7 @@ public:
 private:
     void InitServerMessageQueue();
     void MakeResponse(int pid, int id, LindaOperation, timespec tm, std::string);
-    void HandleRead(int pid, int id, timespec tm, std::string &);
+    void HandleRead(PatternWrapper&);
     void HandleOutput(std::string &);
-    void HandleInput(int pid, int id, timespec tm, std::string &);
-    bool HasTimedout(timespec tm);
+    void HandleInput(PatternWrapper&);
 };

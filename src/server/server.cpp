@@ -81,7 +81,7 @@ void Server::Receive() {
 void Server::HandleOutput(std::string &data) {
     LindaTuple tuple(data);
 
-    auto it = std::find_if(patterns.begin(), patterns.end(), [&](auto &patternWrapper) {
+    auto it = std::find_if(patterns.begin(), patterns.end(), [&](auto& patternWrapper) {
         return patternWrapper.pattern.isMatching(tuple);
     });
 
@@ -92,7 +92,7 @@ void Server::HandleOutput(std::string &data) {
         }
 
         if (it != patterns.end()) {
-            if (HasTimedout(it->tm)) {
+            if (it->HasTimedout()) {
                 std::cout << "Request " << it->pid << " " << it->id << " has already timed out. Tuple won't be sent." << std::endl;
                 patterns.erase(it);
             } else {
@@ -113,33 +113,31 @@ void Server::HandleOutput(std::string &data) {
     }
 }
 
-void Server::HandleInput(int pid, int id, timespec tm, std::string &data) {
-    LindaPattern pattern(data);
+void Server::HandleInput(PatternWrapper& patternWrapper) {
+    //LindaPattern pattern(data);
 
     auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
-        return pattern.isMatching(tuple);
+        return patternWrapper.pattern.isMatching(tuple);
     });
 
-    if (it != tuples.end() && !HasTimedout(tm)) {
-        Send(pid, id, it->toString());
+    if (it != tuples.end() && !patternWrapper.HasTimedout()) {
+        Send(patternWrapper.pid, patternWrapper.id, it->toString());
         tuples.erase(it);
     } else {
-        PatternWrapper patternWrapper(pattern, pid, id, tm, true);
         patterns.push_back(patternWrapper);
     }
 }
 
-void Server::HandleRead(int pid, int id, timespec tm, std::string &data) {
-    LindaPattern pattern(data);
+void Server::HandleRead(PatternWrapper& patternWrapper) {
+    //LindaPattern pattern(data);
 
     auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
-        return pattern.isMatching(tuple);
+        return patternWrapper.pattern.isMatching(tuple);
     });
 
-    if (it != tuples.end() && !HasTimedout(tm)) {
-        Send(pid, id, it->toString());
+    if (it != tuples.end() && !patternWrapper.HasTimedout()) {
+        Send(patternWrapper.pid, patternWrapper.id, it->toString());
     } else {
-        PatternWrapper patternWrapper(pattern, pid, id, tm, false);
         patterns.push_back(patternWrapper);
     }
 }
@@ -151,12 +149,21 @@ void Server::MakeResponse(int pid, int id, LindaOperation op, timespec tm, std::
             break;
 
         case LindaOperation::READ:
-            HandleRead(pid, id, tm, data);
-            break;
+            {
+              LindaPattern lindaPattern(data);
+              PatternWrapper patternWrapper(lindaPattern, pid, id, tm, false);
+              HandleRead(patternWrapper);
+              break;
+            }
 
         case LindaOperation::INPUT:
-            HandleInput(pid, id, tm, data);
-            break;
+            {
+              LindaPattern lindaPattern(data);
+              PatternWrapper patternWrapper(lindaPattern, pid, id, tm, true);
+              HandleInput(patternWrapper);
+              break;
+            }       
+              
     }
 }
 
@@ -179,12 +186,3 @@ void Server::Send(int pid, int id, std::string data) {
     delete msg;
 }
 
-bool Server::HasTimedout(timespec tm) {
-    if (tm.tv_sec == 0 && tm.tv_nsec == 0) {
-        return false;
-    }
-
-    timespec curr;
-    clock_gettime(CLOCK_REALTIME, &curr);
-    return tm < curr;
-}
