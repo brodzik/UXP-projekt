@@ -85,19 +85,31 @@ void Server::HandleOutput(std::string &data) {
         return patternWrapper.pattern.isMatching(tuple);
     });
 
-    if (it == patterns.end() || !(it->ifDelete)) {
-        tuples.push_back(tuple);
-    }
-
-    if (it != patterns.end()) {
-        if (HasTimedout(it->tm)) {
-            std::cout << "Request " << it->pid << " " << it->id << " has already timed out. Tuple won't be sent." << std::endl;
+    while (it != patterns.end()) {
+        if (it == patterns.end() || !(it->ifDelete)) {
             tuples.push_back(tuple);
-        } else {
-            Send(it->pid, it->id, tuple.toString());
+            return;
         }
 
-        patterns.erase(it);
+        if (it != patterns.end()) {
+            if (HasTimedout(it->tm)) {
+                std::cout << "Request " << it->pid << " " << it->id << " has already timed out. Tuple won't be sent." << std::endl;
+                patterns.erase(it);
+            } else {
+                Send(it->pid, it->id, tuple.toString());
+                patterns.erase(it);
+                return;
+            }
+        }
+
+        it = std::find_if(patterns.begin(), patterns.end(), [&](auto &patternWrapper) {
+            return patternWrapper.pattern.isMatching(tuple);
+        });
+    }
+
+    if (it == patterns.end() || !(it->ifDelete)) {
+        tuples.push_back(tuple);
+        return;
     }
 }
 
@@ -108,7 +120,7 @@ void Server::HandleInput(int pid, int id, timespec tm, std::string &data) {
         return pattern.isMatching(tuple);
     });
 
-    if (it != tuples.end()) {
+    if (it != tuples.end() && !HasTimedout(tm)) {
         Send(pid, id, it->toString());
         tuples.erase(it);
     } else {
@@ -124,7 +136,7 @@ void Server::HandleRead(int pid, int id, timespec tm, std::string &data) {
         return pattern.isMatching(tuple);
     });
 
-    if (it != tuples.end()) {
+    if (it != tuples.end() && !HasTimedout(tm)) {
         Send(pid, id, it->toString());
     } else {
         PatternWrapper patternWrapper(pattern, pid, id, tm, false);

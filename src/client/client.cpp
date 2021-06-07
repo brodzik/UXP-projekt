@@ -124,11 +124,13 @@ void Client::Receive(int timeout, timespec tm) {
         res = mq_timedreceive(client_mqdes, buffer, sizeof(buffer), NULL, &tm);
     }
 
-    if (errno == ETIMEDOUT) {
-        std::cout << "Timeout" << std::endl;
-        return;
-    } else if (res < 0) {
-        std::cerr << "Failed to receive message." << std::endl;
+    if (res < 0) {
+        if (errno == ETIMEDOUT) {
+            std::cout << "Timeout" << std::endl;
+        } else {
+            std::cerr << "Failed to receive message." << std::endl;
+        }
+
         return;
     }
 
