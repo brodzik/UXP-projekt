@@ -86,20 +86,18 @@ void Server::HandleOutput(std::string &data) {
     });
 
     while (it != patterns.end()) {
-        if (it == patterns.end() || !(it->ifDelete)) {
+        if (!(it->ifDelete)) {
             tuples.push_back(tuple);
             return;
         }
 
-        if (it != patterns.end()) {
-            if (HasTimedout(it->tm)) {
-                std::cout << "Request " << it->pid << " " << it->id << " has already timed out. Tuple won't be sent." << std::endl;
-                patterns.erase(it);
-            } else {
-                Send(it->pid, it->id, tuple.toString());
-                patterns.erase(it);
-                return;
-            }
+        if (HasTimedout(it->tm)) {
+            std::cout << "Request " << it->pid << " " << it->id << " has already timed out. Tuple won't be sent." << std::endl;
+            patterns.erase(it);
+        } else {
+            Send(it->pid, it->id, tuple.toString());
+            patterns.erase(it);
+            return;
         }
 
         it = std::find_if(patterns.begin(), patterns.end(), [&](auto &patternWrapper) {

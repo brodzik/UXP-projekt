@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <climits>
 #include <cstring>
 #include <ctime>
 #include <iostream>
@@ -28,7 +29,7 @@ public:
     Client(int pid);
     ~Client();
 
-    void Start(bool interactive);
+    void Start();
     void Send(std::string raw);
     void Receive(int timeout, timespec tm);
 

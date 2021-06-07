@@ -13,7 +13,7 @@ ctest
 ```
 ```
 ./server
-./client -i
+./client
 ```
 
 ## Example LINDA prompts
