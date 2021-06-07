@@ -144,6 +144,18 @@ void Server::HandleRead(int pid, int id, timespec tm, std::string &data) {
     }
 }
 
+void Server::HandleExit(int pid) {
+    auto it = clients.find(pid);
+
+    if (it != clients.end()) {
+        std::string path = "/uxp_client_queue_" + std::to_string(pid);
+        mq_close(it->second);
+        mq_unlink(path.c_str());
+        clients.erase(it);
+        std::cout << "Connection to " << pid << " has been closed." << std::endl;
+    }
+}
+
 void Server::MakeResponse(int pid, int id, LindaOperation op, timespec tm, std::string data) {
     switch (op) {
         case LindaOperation::OUTPUT:
@@ -156,6 +168,10 @@ void Server::MakeResponse(int pid, int id, LindaOperation op, timespec tm, std::
 
         case LindaOperation::INPUT:
             HandleInput(pid, id, tm, data);
+            break;
+
+        case LindaOperation::EXIT:
+            HandleExit(pid);
             break;
     }
 }

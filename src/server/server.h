@@ -53,5 +53,6 @@ private:
     void HandleRead(int pid, int id, timespec tm, std::string &);
     void HandleOutput(std::string &);
     void HandleInput(int pid, int id, timespec tm, std::string &);
+    void HandleExit(int pid);
     bool HasTimedout(timespec tm);
 };

@@ -47,6 +47,7 @@ void Client::Start(bool interactive) {
             std::getline(std::cin, s);
 
             if (s == "exit") {
+                Send("exit");
                 return;
             }
 
@@ -67,9 +68,9 @@ void Client::Send(std::string raw) {
 
     try {
         cmd = GetLindaCommand(raw);
-        if (cmd.value().op == LindaOperation::OUTPUT) {
+        if (cmd->op == LindaOperation::OUTPUT) {
             LindaTuple(cmd->data);
-        } else {
+        } else if (cmd->op != LindaOperation::EXIT) {
             LindaPattern(cmd->data);
         }
     } catch (...) {
@@ -107,7 +108,7 @@ void Client::Send(std::string raw) {
 
     delete msg;
 
-    if (cmd->op != LindaOperation::OUTPUT) {
+    if (cmd->op != LindaOperation::OUTPUT && cmd->op != LindaOperation::EXIT) {
         Receive(cmd->timeout, tm);
     }
 }
