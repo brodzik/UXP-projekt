@@ -20,6 +20,4 @@ struct LindaCommand {
     int timeout;
 };
 
-
 std::optional<LindaCommand> GetLindaCommand(std::string raw);
-

@@ -25,7 +25,7 @@ file(GLOB COMMON_FILES
 )
 
 file(GLOB TEST_FILES
-    src/tests/*.cpp
+    test/*.cpp
     src/common/*.cpp
 )
 
@@ -35,5 +35,8 @@ target_link_libraries(server rt)
 add_executable(client ${CLIENT_FILES} ${COMMON_FILES})
 target_link_libraries(client rt)
 
+enable_testing()
+
 add_executable(tests ${TEST_FILES} ${COMMON_FILES})
 target_link_libraries(tests PRIVATE gtest)
+add_test(tests tests)
