@@ -69,17 +69,16 @@ void Server::Receive() {
     std::cout << "Got: " << pid.integer << " " << id.integer << " " << op << " " << data << std::endl;
 
     try {
-        MakeResponse(pid.integer, op, data);
+        MakeResponse(pid.integer, id.integer, op, data);
     } catch (...) {
         std::cerr << "error" << std::endl;
-        // Send(pid.integer, "Error")
     }
 }
 
 void Server::HandleOutput(std::string &data) {
     LindaTuple tuple(data);
 
-    auto it = find_if(patterns.begin(), patterns.end(), [&tuple](auto &patternWrapper) {
+    auto it = std::find_if(patterns.begin(), patterns.end(), [&](auto &patternWrapper) {
         return patternWrapper.pattern.isMatching(tuple);
     });
 
@@ -88,60 +87,73 @@ void Server::HandleOutput(std::string &data) {
     }
 
     if (it != patterns.end()) {
-        Send(it->pid, tuple.toString());
+        Send(it->pid, it->id, tuple.toString());
         patterns.erase(it);
     }
 }
 
-void Server::HandleInput(int pid, std::string &data) {
+void Server::HandleInput(int pid, int id, std::string &data) {
     LindaPattern pattern(data);
 
-    auto it = find_if(tuples.begin(), tuples.end(), [&pattern](auto &tuple) {
+    auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
         return pattern.isMatching(tuple);
     });
 
     if (it != tuples.end()) {
-        Send(pid, it->toString());
+        Send(pid, id, it->toString());
         tuples.erase(it);
     } else {
-        PatternWrapper patternWrapper(pattern, pid, true);
+        PatternWrapper patternWrapper(pattern, pid, id, true);
         patterns.push_back(patternWrapper);
     }
 }
 
-void Server::HandleRead(int pid, std::string &data) {
+void Server::HandleRead(int pid, int id, std::string &data) {
     LindaPattern pattern(data);
 
-    auto it = find_if(tuples.begin(), tuples.end(), [&pattern](auto &tuple) {
+    auto it = std::find_if(tuples.begin(), tuples.end(), [&](auto &tuple) {
         return pattern.isMatching(tuple);
     });
 
     if (it != tuples.end()) {
-        Send(pid, it->toString());
+        Send(pid, id, it->toString());
     } else {
-        PatternWrapper patternWrapper(pattern, pid, false);
+        PatternWrapper patternWrapper(pattern, pid, id, false);
         patterns.push_back(patternWrapper);
     }
 }
 
-void Server::MakeResponse(int pid, LindaOperation op, std::string data) {
+void Server::MakeResponse(int pid, int id, LindaOperation op, std::string data) {
     switch (op) {
         case LindaOperation::OUTPUT:
             HandleOutput(data);
             break;
 
         case LindaOperation::READ:
-            HandleRead(pid, data);
+            HandleRead(pid, id, data);
             break;
 
         case LindaOperation::INPUT:
-            HandleInput(pid, data);
+            HandleInput(pid, id, data);
             break;
     }
 }
 
-void Server::Send(int pid, std::string data) {
-    if (mq_send(clients[pid], data.c_str(), data.size(), 0) == -1) {
+void Server::Send(int pid, int id, std::string data) {
+    IntBytes i = {.integer = id};
+
+    size_t size = sizeof(i) + data.size();
+    char *msg = (char *)malloc(size);
+    memset(msg, 0, size);
+
+    memcpy(msg, i.bytes, 4);
+    memcpy(msg + 4, data.c_str(), data.size());
+
+    if (mq_send(clients[pid], msg, size, 0) < 0) {
         std::cerr << "Error: failed to send message." << std::endl;
+    } else {
+        std::cout << "Response sent " << pid << " " << id << "." << std::endl;
     }
+
+    delete msg;
 }

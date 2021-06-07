@@ -27,8 +27,8 @@ public:
     Client(int pid);
     ~Client();
 
-    void Start();
-    void Send(std::string raw);
+    void Start(bool interactive);
+    void Send(std::string raw, LindaOperation *op);
     void Receive();
 
 private:

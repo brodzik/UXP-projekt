@@ -39,23 +39,36 @@ void Client::InitClientMessageQueue() {
     }
 }
 
-void Client::Start() {
+void Client::Start(bool interactive) {
     while (true) {
-        Send("output((1))");
-        sleep(1);
+        if (interactive) {
+            std::string s;
+            std::getline(std::cin, s);
 
-        Send("input((int: 1), 10)");
-        Receive();
-        sleep(1);
+            LindaOperation op;
+            Send(s, &op);
 
-        /*   Send("input((int: 1, string: \"abc\", float: 3.1415, string: \"d\"), 10)");
-        Receive();
-        sleep(1);
-        */
+            if (op == LindaOperation::ERROR) {
+                continue;
+            }
+
+            if (op != LindaOperation::OUTPUT) {
+                Receive();
+            }
+        } else {
+            Send("output((1, \"abc\", 3.1415, \"d\"))", NULL);
+            sleep(1);
+            Send("read((int: 1, string: *, float: *, string: *), 10)", NULL);
+            Receive();
+            sleep(1);
+            Send("input((int: 1, string: *, float: *, string: *), 10)", NULL);
+            Receive();
+            sleep(1);
+        }
     }
 }
 
-void Client::Send(std::string raw) {
+void Client::Send(std::string raw, LindaOperation *op) {
     std::optional<LindaCommand> cmd;
 
     try {
@@ -67,6 +80,7 @@ void Client::Send(std::string raw) {
         }
     } catch (...) {
         std::cerr << "Error: invalid Linda command." << std::endl;
+        *op = LindaOperation::ERROR;
         return;
     }
 
@@ -79,13 +93,19 @@ void Client::Send(std::string raw) {
     msg[8] = cmd->op;
     memcpy(msg + 9, cmd->data.c_str(), cmd->data.size());
 
-    if (mq_send(server_mqdes, msg, size, 0) == -1) {
+    if (mq_send(server_mqdes, msg, size, 0) < 0) {
         std::cerr << "Error: failed to send message." << std::endl;
+    } else {
+        std::cout << "Sent." << std::endl;
     }
 
     ++id.integer;
 
     delete msg;
+
+    if (op != NULL) {
+        *op = cmd->op;
+    }
 }
 
 void Client::Receive() {
@@ -99,5 +119,9 @@ void Client::Receive() {
         return;
     }
 
-    std::cout << "Got: " << std::string(buffer) << std::endl;
+    IntBytes i;
+    memcpy(i.bytes, buffer, 4);
+    std::string data = std::string(buffer + 4);
+
+    std::cout << "Got: " << i.integer << " " << data << std::endl;
 }

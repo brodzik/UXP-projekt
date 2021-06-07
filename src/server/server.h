@@ -19,13 +19,15 @@
 class Server {
 private:
     struct PatternWrapper {
-        PatternWrapper(LindaPattern pattern, int pid, bool ifDelete)
+        PatternWrapper(LindaPattern pattern, int pid, int id, bool ifDelete)
             : pattern(pattern)
             , pid(pid)
+            , id(id)
             , ifDelete(ifDelete) {
         }
         LindaPattern pattern;
         int pid;
+        int id;
         bool ifDelete;
     };
 
@@ -40,12 +42,12 @@ public:
     ~Server();
     void Start();
     void Receive();
-    void Send(int pid, std::string data);
+    void Send(int pid, int id, std::string data);
 
 private:
     void InitServerMessageQueue();
-    void MakeResponse(int pid, LindaOperation, std::string);
-    void HandleRead(int pid, std::string &);
+    void MakeResponse(int pid, int id, LindaOperation, std::string);
+    void HandleRead(int pid, int id, std::string &);
     void HandleOutput(std::string &);
-    void HandleInput(int pid, std::string &);
+    void HandleInput(int pid, int id, std::string &);
 };
