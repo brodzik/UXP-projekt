@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 
+#include "common/LindaPattern.h"
 #include "common/LindaTuple.h"
 #include "utility.h"
 
