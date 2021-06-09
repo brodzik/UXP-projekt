@@ -16,6 +16,23 @@ ctest
 ./client
 ```
 
+# System Tests
+```
+cd systemTests/scripts
+chmod +x *.sh
+```
+run server:
+```
+cd build
+./server
+```
+in another command prompt run tests:
+```
+cd build
+./systemTest
+```
+
+
 ## Example LINDA prompts
 ```
 output((123, 1.25, "abc"))
