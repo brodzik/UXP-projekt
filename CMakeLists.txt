@@ -30,11 +30,8 @@ file(GLOB TEST_FILES
     src/server/server.cpp
 )
 
-file(GLOB SYSTEM_TEST_FILES
-  systemTests/*.cpp
-  src/common/*.cpp
-  src/server/server.cpp
-  src/client/client.cpp
+file(GLOB SYS_TEST_FILES
+  systemTests/main_test.cpp
 )
 
 list(FILTER TEST_FILES EXCLUDE REGEX "src/server/main_server.cpp")
@@ -53,6 +50,8 @@ add_executable(tests ${TEST_FILES} ${COMMON_FILES})
 target_link_libraries(tests PRIVATE gtest rt)
 add_test(tests tests)
 
-add_executable(systemTests ${SYSTEM_TEST_FILES} ${COMMON_FILES})
-target_link_libraries(systemTests PRIVATE gtest rt)
-add_test(systemTests systemTests)
+#add_executable(systemTests ${SYSTEM_TEST_FILES} ${COMMON_FILES})
+#target_link_libraries(systemTests PRIVATE gtest rt)
+#add_test(systemTests systemTests)
+
+add_executable(systemTest ${SYS_TEST_FILES})
