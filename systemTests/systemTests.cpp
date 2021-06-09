@@ -58,6 +58,7 @@ TEST(System, TwoClientsConcurrently) {
   }
 }
 
+
 TEST(System, WaitAndReceive) {
   if (fork() == 0) {
     system("../systemTests/scripts/runCommands.sh receiver-1.txt");
@@ -73,6 +74,49 @@ TEST(System, WaitAndReceive) {
   }
 }
 
+TEST(System, TwoClientsConcurrentlyMixed) {
+  if (fork() == 0) {
+    system("../systemTests/scripts/runCommands.sh client-1.txt");
+    std::string output = readFile("output.txt");
+    std::string groundtruth = readFile("../systemTests/scripts/groundtruth-twoClientsMixed.txt");
+    EXPECT_EQ(groundtruth, output);
+    exit(0);
+  }
+
+  else {
+    system("../systemTests/scripts/runCommandsNoOutput.sh client-2.txt");
+  }
+}
+
+/*
+TEST(System, TwoReceiversTwoSenders) {
+  if (fork() == 0) {
+    system("../systemTests/scripts/runCommands.sh receiver-1.txt");
+    std::string output = readFile("output.txt");
+    std::string groundtruth = readFile("../systemTests/scripts/groundtruth-twoClients.txt");
+    EXPECT_EQ(groundtruth, output);
+    exit(0);
+
+    if (fork() == 0) {
+      system("../systemTests/scripts/runCommands.sh receiver-1.txt");
+      std::string output = readFile("output.txt");
+      std::string groundtruth = readFile("../systemTests/scripts/groundtruth-twoClients.txt");
+      EXPECT_EQ(groundtruth, output);
+      exit(0);
+    }
+
+    else {
+      system("../systemTests/scripts/runCommandsNoOutput.sh sender-1.txt");
+      exit(0);
+    }
+  }
+
+  else {
+    system("../systemTests/scripts/runCommandsNoOutput.sh sender-1.txt");
+  }
+
+}
+*/
 
 /*
 
