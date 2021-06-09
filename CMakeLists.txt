@@ -27,7 +27,19 @@ file(GLOB COMMON_FILES
 file(GLOB TEST_FILES
     test/*.cpp
     src/common/*.cpp
+    src/server/server.cpp
 )
+
+file(GLOB SYSTEM_TEST_FILES
+  systemTests/*.cpp
+  src/common/*.cpp
+  src/server/server.cpp
+  src/client/client.cpp
+)
+
+list(FILTER TEST_FILES EXCLUDE REGEX "src/server/main_server.cpp")
+list(FILTER SYSTEM_TEST_FILES EXCLUDE REGEX "src/server/main_server.cpp")
+list(FILTER SYSTEM_TEST_FILES EXCLUDE REGEX "src/client/main_client.cpp")
 
 add_executable(server ${SERVER_FILES} ${COMMON_FILES})
 target_link_libraries(server rt)
@@ -38,5 +50,9 @@ target_link_libraries(client rt)
 enable_testing()
 
 add_executable(tests ${TEST_FILES} ${COMMON_FILES})
-target_link_libraries(tests PRIVATE gtest)
+target_link_libraries(tests PRIVATE gtest rt)
 add_test(tests tests)
+
+add_executable(systemTests ${SYSTEM_TEST_FILES} ${COMMON_FILES})
+target_link_libraries(systemTests PRIVATE gtest rt)
+add_test(systemTests systemTests)

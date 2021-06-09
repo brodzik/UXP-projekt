@@ -1,0 +1,1 @@
+output((1))\noutput((2))\noutput((3))\nexit

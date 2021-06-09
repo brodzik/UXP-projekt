@@ -4,7 +4,6 @@
 
 Server::Server() {
     mq_name = "/uxp_server_queue";
-
     InitServerMessageQueue();
 }
 

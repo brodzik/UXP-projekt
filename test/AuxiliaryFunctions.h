@@ -4,6 +4,7 @@
 
 #include "common/LindaPattern.h"
 #include "common/LindaTuple.h"
+#include "server/server.h"
 
 inline void assertValue(Value tupleElement, Value expectedValue) {
     GTEST_ASSERT_EQ(tupleElement, expectedValue);
