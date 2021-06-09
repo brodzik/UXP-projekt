@@ -15,8 +15,7 @@ ctest
 ./server
 ./client
 ```
-
-# System Tests
+**System Tests**
 ```
 cd systemTests/scripts
 chmod +x *.sh
