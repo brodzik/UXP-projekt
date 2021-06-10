@@ -1,0 +1,1 @@
+output((1))\ninput((int:2),10)\noutput((1))\ninput((int:2),10)\nexit
